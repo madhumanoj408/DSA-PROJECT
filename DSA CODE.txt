@@ -1,0 +1,276 @@
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_ORDERS 100
+#define MAX_NAME 50
+#define MAX_ITEM 100
+
+/* Structure for an order */
+typedef struct {
+    int orderId;
+    char customerName[MAX_NAME];
+    char foodItem[MAX_ITEM];
+    int quantity;
+} Order;
+
+/* Queue for pending orders */
+typedef struct {
+    Order orders[MAX_ORDERS];
+    int front;
+    int rear;
+} OrderQueue;
+
+/* Stack for completed orders */
+typedef struct {
+    Order orders[MAX_ORDERS];
+    int top;
+} OrderStack;
+
+
+/* ---------- QUEUE FUNCTIONS ---------- */
+
+/* Initialize queue */
+void initializeQueue(OrderQueue *q) {
+    q->front = 0;
+    q->rear = -1;
+}
+
+/* Check if queue is empty */
+int isQueueEmpty(OrderQueue *q) {
+    return q->front > q->rear;
+}
+
+/* Check if queue is full */
+int isQueueFull(OrderQueue *q) {
+    return q->rear == MAX_ORDERS - 1;
+}
+
+/* Add order to queue */
+void enqueue(OrderQueue *q, Order order) {
+    if (isQueueFull(q)) {
+        printf("\nOrder queue is full!\n");
+        return;
+    }
+
+    q->orders[++q->rear] = order;
+
+    printf("\nOrder placed successfully!\n");
+    printf("Order ID: %d\n", order.orderId);
+}
+
+/* Remove order from queue */
+Order dequeue(OrderQueue *q) {
+    Order order;
+
+    if (isQueueEmpty(q)) {
+        order.orderId = -1;
+        return order;
+    }
+
+    order = q->orders[q->front++];
+
+    return order;
+}
+
+
+/* ---------- STACK FUNCTIONS ---------- */
+
+/* Initialize stack */
+void initializeStack(OrderStack *s) {
+    s->top = -1;
+}
+
+/* Check if stack is empty */
+int isStackEmpty(OrderStack *s) {
+    return s->top == -1;
+}
+
+/* Check if stack is full */
+int isStackFull(OrderStack *s) {
+    return s->top == MAX_ORDERS - 1;
+}
+
+/* Push completed order onto stack */
+void push(OrderStack *s, Order order) {
+    if (isStackFull(s)) {
+        printf("\nCompleted order stack is full!\n");
+        return;
+    }
+
+    s->orders[++s->top] = order;
+}
+
+/* Pop most recent completed order */
+Order pop(OrderStack *s) {
+    Order order;
+
+    if (isStackEmpty(s)) {
+        order.orderId = -1;
+        return order;
+    }
+
+    order = s->orders[s->top--];
+
+    return order;
+}
+
+
+/* ---------- DISPLAY FUNCTIONS ---------- */
+
+/* Display an order */
+void displayOrder(Order order) {
+    printf("-----------------------------------\n");
+    printf("Order ID      : %d\n", order.orderId);
+    printf("Customer Name : %s\n", order.customerName);
+    printf("Food Item     : %s\n", order.foodItem);
+    printf("Quantity      : %d\n", order.quantity);
+    printf("-----------------------------------\n");
+}
+
+
+/* View pending orders */
+void viewPendingOrders(OrderQueue *q) {
+    int i;
+
+    if (isQueueEmpty(q)) {
+        printf("\nNo pending orders.\n");
+        return;
+    }
+
+    printf("\n========== PENDING ORDERS ==========\n");
+
+    for (i = q->front; i <= q->rear; i++) {
+        displayOrder(q->orders[i]);
+    }
+}
+
+
+/* View completed orders */
+void viewCompletedOrders(OrderStack *s) {
+    int i;
+
+    if (isStackEmpty(s)) {
+        printf("\nNo completed orders.\n");
+        return;
+    }
+
+    printf("\n========= COMPLETED ORDERS =========\n");
+
+    /* Display from top to bottom */
+    for (i = s->top; i >= 0; i--) {
+        displayOrder(s->orders[i]);
+    }
+}
+
+
+/* ---------- MAIN PROGRAM ---------- */
+
+int main() {
+    OrderQueue queue;
+    OrderStack stack;
+
+    int choice;
+    int nextOrderId = 1;
+
+    Order order;
+    Order completedOrder;
+
+    initializeQueue(&queue);
+    initializeStack(&stack);
+
+    do {
+        printf("\n\n====================================\n");
+        printf("   RESTAURANT ORDER MANAGEMENT\n");
+        printf("====================================\n");
+        printf("1. Place New Order\n");
+        printf("2. Process Next Order\n");
+        printf("3. View Pending Orders\n");
+        printf("4. View Completed Orders\n");
+        printf("5. Retrieve Most Recent Completed Order\n");
+        printf("6. Exit\n");
+        printf("====================================\n");
+
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+        getchar();  /* Remove newline */
+
+        switch (choice) {
+
+            /* Place a new order */
+            case 1:
+                order.orderId = nextOrderId++;
+
+                printf("\nEnter customer name: ");
+                fgets(order.customerName, MAX_NAME, stdin);
+                order.customerName[strcspn(order.customerName, "\n")] = '\0';
+
+                printf("Enter food item: ");
+                fgets(order.foodItem, MAX_ITEM, stdin);
+                order.foodItem[strcspn(order.foodItem, "\n")] = '\0';
+
+                printf("Enter quantity: ");
+                scanf("%d", &order.quantity);
+
+                enqueue(&queue, order);
+                break;
+
+
+            /* Process the next order */
+            case 2:
+                if (isQueueEmpty(&queue)) {
+                    printf("\nNo orders waiting to be processed.\n");
+                } else {
+                    completedOrder = dequeue(&queue);
+
+                    printf("\nProcessing order...\n");
+                    displayOrder(completedOrder);
+
+                    /* Add processed order to completed stack */
+                    push(&stack, completedOrder);
+
+                    printf("Order completed successfully!\n");
+                }
+                break;
+
+
+            /* View pending orders */
+            case 3:
+                viewPendingOrders(&queue);
+                break;
+
+
+            /* View completed orders */
+            case 4:
+                viewCompletedOrders(&stack);
+                break;
+
+
+            /* Retrieve latest completed order */
+            case 5:
+                completedOrder = pop(&stack);
+
+                if (completedOrder.orderId == -1) {
+                    printf("\nNo completed orders available.\n");
+                } else {
+                    printf("\nMost Recent Completed Order:\n");
+                    displayOrder(completedOrder);
+                }
+                break;
+
+
+            /* Exit */
+            case 6:
+                printf("\nThank you for using the Restaurant Order Management System!\n");
+                break;
+
+
+            default:
+                printf("\nInvalid choice! Please try again.\n");
+        }
+
+    } while (choice != 6);
+
+    return 0;
+}
